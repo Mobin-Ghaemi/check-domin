@@ -1,51 +1,30 @@
-import socket
+import requests
+import time 
 
-def check_ir_domain(domain: str):
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(5)
-            s.connect(("whois.nic.ir", 43))
-            s.sendall((domain + "\r\n").encode())
+url = "https://www.iranserver.com/ajax/searchDomainWhoisChecker/"
 
-            response = b""
-            while True:
-                data = s.recv(4096)
-                if not data:
-                    break
-                response += data
+with open("domains.txt", "r") as input_file:
+    domains = input_file.readlines()
 
-        result = response.decode("utf-8").lower()
-
-        if "no entries found" in result:
-            return True  # دامنه آزاد است
-        else:
-            return False  # دامنه گرفته شده است
-    except Exception as e:
-        print(f"⚠️ Error checking domain: {e}")
-        return False
-
-def check_domains():
-    available_domains = []
-
-    # خواندن دامنه‌ها از فایل domains.txt
-    try:
-        with open("domains.txt", "r") as file:
-            domains = file.readlines()
-    except FileNotFoundError:
-        print("⚠️ File 'domains.txt' not found.")
-        return
-
+with open("azad.txt", "w") as output_file:
     for domain in domains:
-        domain = domain.strip()  # حذف فضای خالی اضافی از اطراف دامنه
-        if check_ir_domain(domain):
-            available_domains.append(domain)
+        domain = domain.strip()  
+        if domain:  
+            data = {
+                "domain": domain
+            }
+            
+            response = requests.post(url, json=data)
+            response_json = response.json()  
+            print(response_json)
 
-    # ذخیره دامنه‌های آزاد در فایل free.txt
-    with open("free.txt", "w") as f:
-        for domain in available_domains:
-            f.write(domain + "\n")
+            res = response_json[0].get('available', False)
 
-    print("Done! Available domains are saved in 'free.txt'.")
+            if res == True:
+                print(f"Domain {domain} is available.")
+                output_file.write(f'{domain}\n')
 
-# اجرای تابع برای بررسی دامنه‌ها
-check_domains()
+            
+            time.sleep(2)  
+
+print("دامنه‌های آزاد در فایل azad.txt ذخیره شدند.")
