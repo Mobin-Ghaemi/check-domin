@@ -1,0 +1,9 @@
+pythonwhois
+
+python-whois
+
+requests
+
+beautifulsoup4
+
+lxml
